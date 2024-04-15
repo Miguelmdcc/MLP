@@ -46,7 +46,6 @@ targ = np.array([[1,-1,-1],
                 [-1,1,-1],
                 [-1,-1,1]])
 
-#calculo de zin(1x2) = x(3x3)*v(3x2) + v0(1x2)
 zin = 0
 y = 0
 z = 0
@@ -62,58 +61,66 @@ deltav0 = 0
 ciclo = 0
 errotolerado = 0.01
 
-while(errototal > errotolerado):
-    errototal = 0
-    for i in range(x.shape[0]):
+def treino():
+    while(errototal > errotolerado):
+        errototal = 0
+        for i in range(x.shape[0]):
+            # Cálculo da primeira camada
+            zin = np.dot(x[i], v) + v0
+            z = np.tanh(zin)
+            
+            # Cálculo da segunda camada
+            yin = np.dot(z, w) + w0
+            y = np.tanh(yin)
+            
+            quadratico = np.sum((targ[i] - y) ** 2)
+            errototal += 0.5 * quadratico
+            
+            # Adquirindo a expressão para correção dos pesos da segunda camada
+            deltak = (targ[:][i] - y) * (1 - np.square(np.tanh(yin)))
+            # Correção dos pesos sinápticos da segunda camada
+            deltaw = alfa * np.outer(deltak, z)
+            deltaw0 = alfa * deltak
+            
+            # Propagando o erro de volta para a primeira camada
+            deltain = np.dot(deltak, np.transpose(w))
+
+            # Adquirindo a expressão para correção dos pesos da primeira camada
+            delta = deltain * (1 - np.square(np.tanh(zin)))
+            #Correção dos pesos sinápticos da primeira camada
+            deltav = alfa*(np.outer(delta,x[i]))
+            deltav0 = alfa*delta
+
+            # Atualização dos pesos da camada de saída
+            w += np.transpose(deltaw)
+            w0 += np.transpose(deltaw0)
+            # Atualização dos pesos da camada intermediária
+            v += np.transpose(deltav)
+            v0 += np.transpose(deltav0)
+
+        ciclo += 1
+        print("Ciclo:", ciclo, "Erro total:", errototal)
+
+# Novos padrões de entrada para teste
+novos_padroes = x
+
+def treino(entrada,v,v0,w,w0):
+    # Realizar a propagação direta para obter as previsões
+    for padrao in entrada:
         # Cálculo da primeira camada
-        zin = np.dot(x[i], v) + v0
+        zin = np.dot(padrao, v) + v0
         z = np.tanh(zin)
-        
+
         # Cálculo da segunda camada
         yin = np.dot(z, w) + w0
         y = np.tanh(yin)
         
-        quadratico = np.sum((targ[i] - y) ** 2)
-        errototal += 0.5 * quadratico
-        
-        # Adquirindo a expressão para correção dos pesos da segunda camada
-        deltak = (targ[:][i] - y) * (1 - np.square(np.tanh(yin)))
-        # Correção dos pesos sinápticos da segunda camada
-        deltaw = alfa * np.outer(deltak, z)
-        deltaw0 = alfa * deltak
-        
-        # Propagando o erro de volta para a primeira camada
-        deltain = np.dot(deltak, np.transpose(w))
+        for j in range(targ.shape[0]):
+            if y[j] >= 0:
+                y[j] = 1.0
+            else:
+                y[j] = -1.0
 
-        # Adquirindo a expressão para correção dos pesos da primeira camada
-        delta = deltain * (1 - np.square(np.tanh(zin)))
-        #Correção dos pesos sinápticos da primeira camada
-        deltav = alfa*(np.outer(delta,x[i]))
-        deltav0 = alfa*delta
-
-        # Atualização dos pesos da camada de saída
-        w += np.transpose(deltaw)
-        w0 += np.transpose(deltaw0)
-        # Atualização dos pesos da camada intermediária
-        v += np.transpose(deltav)
-        v0 += np.transpose(deltav0)
-
-    ciclo += 1
-    print("Ciclo:", ciclo, "Erro total:", errototal)
-
-# Novos padrões de entrada para teste
-novos_padroes = np.array([[1, 0.5, -1],
-                          [1, 0, -1]])
-
-# Realizar a propagação direta para obter as previsões
-for novo_padrao in x:
-    # Cálculo da primeira camada
-    zin = np.dot(novo_padrao, v) + v0
-    z = np.tanh(zin)
-
-    # Cálculo da segunda camada
-    yin = np.dot(z, w) + w0
-    y = np.tanh(yin)
-    
-    print("Padrão de entrada:", novo_padrao)
-    print("Saída prevista:", y)
+        print("Padrão de entrada:", padrao)
+        print("Saída prevista:", y)
+treino(novos_padroes,v,v0,w,w0)
